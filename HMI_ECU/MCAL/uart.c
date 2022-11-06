@@ -1,12 +1,12 @@
- /******************************************************************************
+/******************************************************************************
  *
  * Module: UART
  *
  * File Name: uart.c
  *
- * Description: Source file for the UART AVR driver
+ * Description: Source file for the UART AVR driver with configurations
  *
- * Author: Mohamed Tarek
+ * Author: Zyad Hassan
  *
  *******************************************************************************/
 
@@ -25,8 +25,7 @@
  * 2. Enable the UART.
  * 3. Setup the UART baud rate.
  */
-void UART_init(const UART_ConfigType* Config_Ptr)
-{
+void UART_init(const UART_ConfigType * Config_Ptr){
 	uint16 ubrr_value = 0;
 
 	/* U2X = 1 for double transmission speed */
@@ -51,7 +50,7 @@ void UART_init(const UART_ConfigType* Config_Ptr)
 	 * UCSZ1:0 = 11 For 8-bit data mode
 	 * UCPOL   = 0 Used with the Synchronous operation only
 	 ***********************************************************************/ 	
-	UCSRC = (1<<URSEL) | ((Config_Ptr->bit_data&0x03)<<UCSZ0) | ((Config_Ptr->parity&0x03)<<UPM0) | ((Config_Ptr->stop_bit)<<USBS);
+	UCSRC = (1<<URSEL) | (Config_Ptr->bit_data << 1) | (Config_Ptr->parity << 4) | (Config_Ptr->stop_bit<< 3);
 	
 	/* Calculate the UBRR register value */
 	ubrr_value = (uint16)(((F_CPU / (Config_Ptr->baud_rate * 8UL))) - 1);
@@ -79,7 +78,13 @@ void UART_sendByte(const uint8 data)
 	 */
 	UDR = data;
 
+	/************************* Another Method *************************
+	UDR = data;
+	while(BIT_IS_CLEAR(UCSRA,TXC)){} // Wait until the transmission is complete TXC = 1
+	SET_BIT(UCSRA,TXC); // Clear the TXC flag
+	*******************************************************************/
 }
+
 /*
  * Description :
  * Functional responsible for receive byte from another UART device.
@@ -110,6 +115,13 @@ void UART_sendString(const uint8 *Str)
 		UART_sendByte(Str[i]);
 		i++;
 	}
+	/************************* Another Method *************************
+	while(*Str != '\0')
+	{
+		UART_sendByte(*Str);
+		Str++;
+	}		
+	*******************************************************************/
 }
 
 /*
